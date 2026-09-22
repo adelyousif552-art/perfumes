@@ -5,11 +5,12 @@ import { useMemo, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useProduct } from "@/features/products/hooks/useProduct";
+import { useProducts } from "@/features/products/hooks/useProducts";
 import { productPaths } from "@/features/products/paths";
 import type { Product } from "@/features/products/types/product.types";
 import { formatWholePrice } from "@/features/products/utils/product.utils";
 import { cn } from "@/lib/utils/cn";
-import { ProductImages } from "./ProductImages";
+import { ProductCard } from "./ProductCard";
 
 export type ProductDetailsActionsContext = {
   product: Product;
@@ -58,6 +59,10 @@ export function ProductDetailsPage({
 }: ProductDetailsPageProps) {
   const productQuery = useProduct(productId);
   const product = productQuery.data;
+  const relatedQuery = useProducts({ pageSize: 8 });
+  const relatedProducts = (relatedQuery.data?.items ?? [])
+    .filter((item) => item.id !== productId)
+    .slice(0, 4);
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, string>
   >({});
@@ -356,34 +361,26 @@ export function ProductDetailsPage({
             Fragrances of synonymous sophistication
           </p>
         </div>
-        <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }, (_, index) => (
-            <article
-              key={index}
-              className="flex flex-col gap-4 rounded-lg bg-white p-4"
-            >
-              <ProductImages product={product}/>
-             
-            
-              <div className="flex items-start justify-between gap-3">
-                <h3
-                  className={`${serif} text-[20px] text-[#1a1a1a] sm:text-[22px]`}
-                >
-                  {product.name}
-                </h3>
-                <p className="shrink-0 text-[15px] font-semibold text-[#1a1a1a]">
-                  {product.price}
-                </p>
-              </div>
-              <button
-                type="button"
-                className="flex w-full items-center justify-center rounded border border-solid border-[#ebe6de] py-3 text-[11px] font-semibold uppercase whitespace-nowrap text-[#1a1a1a]"
-              >
-                Add to cart
-              </button>
-            </article>
-          ))}
-        </div>
+        {relatedQuery.isLoading ? (
+          <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div
+                key={index}
+                className="h-[380px] w-full animate-pulse rounded-lg bg-white"
+              />
+            ))}
+          </div>
+        ) : relatedProducts.length > 0 ? (
+          <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {relatedProducts.map((relatedProduct) => (
+              <ProductCard key={relatedProduct.id} product={relatedProduct} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-[13px] text-[#605a54]">
+            No related fragrances to show yet.
+          </p>
+        )}
       </section>
     </article>
   );
